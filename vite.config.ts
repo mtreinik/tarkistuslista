@@ -13,8 +13,8 @@ export default defineConfig({
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'Tarkistuslista',
-        short_name: 'Checklist',
-        description: 'A mobile-friendly checklist app with local storage.',
+        short_name: 'Tarkistuslista',
+        description: 'Mobiiliystävällinen tarkistuslistasovellus paikallisella tallennustilalla.',
         theme_color: '#4f46e5',
         background_color: '#f4f7fb',
         display: 'standalone',

@@ -105,7 +105,7 @@ export function createDefaultState(): AppState {
     instances: [starterInstance],
     selectedTemplateId: starterTemplate.id,
     selectedHistoryInstanceId: null,
-    locale: 'en',
+    locale: 'fi',
   }
 }
 
@@ -223,7 +223,7 @@ export function normalizeAppState(state: PersistedAppState): AppState {
     })),
     selectedTemplateId,
     selectedHistoryInstanceId,
-    locale: isLocale(state.locale) ? state.locale : 'en',
+    locale: isLocale(state.locale) ? state.locale : 'fi',
   }
 }
 
