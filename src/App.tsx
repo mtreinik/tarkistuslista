@@ -492,6 +492,8 @@ function App() {
       ...state,
       instances: [...state.instances, nextInstance],
     }))
+    setIsCreatingChecklist(false)
+    setViewMode('checklist')
   }
 
   const handleSaveTitle = (nextTitle: string) => {
