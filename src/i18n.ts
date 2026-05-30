@@ -1,0 +1,157 @@
+export type Locale = 'en' | 'fi' | 'sw'
+
+export const localeOptions: Locale[] = ['en', 'fi', 'sw']
+
+export function isLocale(value: unknown): value is Locale {
+  return value === 'en' || value === 'fi' || value === 'sw'
+}
+
+export function toIntlLocale(locale: Locale) {
+  switch (locale) {
+    case 'fi':
+      return 'fi-FI'
+    case 'sw':
+      return 'sv-SE'
+    default:
+      return 'en'
+  }
+}
+
+type Messages = {
+  appBadge: string
+  templateEditor: string
+  history: string
+  historyEmpty: string
+  languageLabel: string
+  checklistTabsLabel: string
+  checklistTitleLabel: string
+  checklistItemsLabel: string
+  checklistTitlePlaceholder: string
+  newChecklist: string
+  removeChecklist: string
+  createChecklist: string
+  saveTitle: string
+  addTemplateItem: string
+  addTemplateItemPlaceholder: string
+  addItem: string
+  removeItem: string
+  giveTitleFirst: string
+  noTemplateItems: string
+  everythingChecked: string
+  nothingCheckedYet: string
+  everythingWasChecked: string
+  nothingWasChecked: string
+  started: (value: string) => string
+  newChecklistOf: (title: string) => string
+  removeChecklistConfirm: (title: string) => string
+  historySummary: (unchecked: number, checked: number) => string
+  toCheckTitle: (count: number) => string
+  checkedTitle: (count: number) => string
+  editItemAria: (label: string) => string
+}
+
+export const messages: Record<Locale, Messages> = {
+  en: {
+    appBadge: 'Checklist',
+    templateEditor: 'Template editor',
+    history: 'History',
+    historyEmpty: 'Start a new checklist to begin building history.',
+    languageLabel: 'Language',
+    checklistTabsLabel: 'Checklist titles',
+    checklistTitleLabel: 'Checklist title',
+    checklistItemsLabel: 'Checklist items',
+    checklistTitlePlaceholder: 'Checklist title',
+    newChecklist: 'New checklist',
+    removeChecklist: 'Remove checklist',
+    createChecklist: 'Create checklist',
+    saveTitle: 'Save title',
+    addTemplateItem: 'Add template item',
+    addTemplateItemPlaceholder: 'Toothbrush',
+    addItem: 'Add item',
+    removeItem: 'Remove',
+    giveTitleFirst: 'Give the checklist a title before adding or editing items.',
+    noTemplateItems: 'No template items yet. Add the first one below.',
+    everythingChecked: 'Everything is checked.',
+    nothingCheckedYet: 'Nothing checked yet.',
+    everythingWasChecked: 'Everything was checked.',
+    nothingWasChecked: 'Nothing was checked.',
+    started: (value) => `Started ${value}`,
+    newChecklistOf: (title) => `New checklist of ${title}`,
+    removeChecklistConfirm: (title) =>
+      `Are you sure you want to remove checklist '${title}'?`,
+    historySummary: (unchecked, checked) =>
+      `${unchecked} unchecked / ${checked} checked`,
+    toCheckTitle: (count) => `${count} to check`,
+    checkedTitle: (count) => `${count} checked`,
+    editItemAria: (label) => `Edit ${label}`,
+  },
+  fi: {
+    appBadge: 'Tarkistuslista',
+    templateEditor: 'Muokkaa pohjaa',
+    history: 'Historia',
+    historyEmpty: 'Aloita uusi tarkistuslista, niin historiaa alkaa kertyä.',
+    languageLabel: 'Kieli',
+    checklistTabsLabel: 'Tarkistuslistat',
+    checklistTitleLabel: 'Tarkistuslistan nimi',
+    checklistItemsLabel: 'Tarkistuslistan kohdat',
+    checklistTitlePlaceholder: 'Tarkistuslistan nimi',
+    newChecklist: 'Uusi tarkistuslista',
+    removeChecklist: 'Poista tarkistuslista',
+    createChecklist: 'Luo tarkistuslista',
+    saveTitle: 'Tallenna nimi',
+    addTemplateItem: 'Lisää listan kohta',
+    addTemplateItemPlaceholder: 'Hammasharja',
+    addItem: 'Lisää kohta',
+    removeItem: 'Poista',
+    giveTitleFirst: 'Anna tarkistuslistalle nimi ennen kohtien lisäämistä tai muokkausta.',
+    noTemplateItems: 'Listassa ei vielä ole kohtia. Lisää ensimmäinen kohta alle.',
+    everythingChecked: 'Kaikki on tarkistettu.',
+    nothingCheckedYet: 'Mitään ei ole vielä tarkistettu.',
+    everythingWasChecked: 'Kaikki oli tarkistettu.',
+    nothingWasChecked: 'Mitään ei ollut tarkistettu.',
+    started: (value) => `Aloitettu ${value}`,
+    newChecklistOf: (title) => `Uusi tarkistuslista: ${title}`,
+    removeChecklistConfirm: (title) =>
+      `Haluatko varmasti poistaa tarkistuslistan '${title}'?`,
+    historySummary: (unchecked, checked) =>
+      `${unchecked} tarkistamatta / ${checked} tarkistettu`,
+    toCheckTitle: (count) => `${count} tarkistamatta`,
+    checkedTitle: (count) => `${count} tarkistettu`,
+    editItemAria: (label) => `Muokkaa kohtaa ${label}`,
+  },
+  sw: {
+    appBadge: 'Checklista',
+    templateEditor: 'Redigera mall',
+    history: 'Historik',
+    historyEmpty: 'Starta en ny checklista för att börja bygga historik.',
+    languageLabel: 'Språk',
+    checklistTabsLabel: 'Checklistor',
+    checklistTitleLabel: 'Checklistans namn',
+    checklistItemsLabel: 'Checklistans punkter',
+    checklistTitlePlaceholder: 'Checklistans namn',
+    newChecklist: 'Ny checklista',
+    removeChecklist: 'Ta bort checklista',
+    createChecklist: 'Skapa checklista',
+    saveTitle: 'Spara namn',
+    addTemplateItem: 'Lägg till punkt',
+    addTemplateItemPlaceholder: 'Tandborste',
+    addItem: 'Lägg till punkt',
+    removeItem: 'Ta bort',
+    giveTitleFirst:
+      'Ge checklistan ett namn innan du lägger till eller redigerar punkter.',
+    noTemplateItems: 'Checklistan har inga punkter ännu. Lägg till den första nedan.',
+    everythingChecked: 'Allt är kontrollerat.',
+    nothingCheckedYet: 'Ingenting är kontrollerat ännu.',
+    everythingWasChecked: 'Allt var kontrollerat.',
+    nothingWasChecked: 'Ingenting var kontrollerat.',
+    started: (value) => `Startad ${value}`,
+    newChecklistOf: (title) => `Ny checklista för ${title}`,
+    removeChecklistConfirm: (title) =>
+      `Är du säker på att du vill ta bort checklistan '${title}'?`,
+    historySummary: (unchecked, checked) =>
+      `${unchecked} okontrollerade / ${checked} kontrollerade`,
+    toCheckTitle: (count) => `${count} att kontrollera`,
+    checkedTitle: (count) => `${count} kontrollerade`,
+    editItemAria: (label) => `Redigera ${label}`,
+  },
+}

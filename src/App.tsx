@@ -1,6 +1,7 @@
 import type { FormEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
+import { localeOptions, messages, toIntlLocale, type Locale } from './i18n'
 import {
   type AppState,
   type ChecklistInstance,
@@ -14,16 +15,12 @@ import {
   saveAppState,
 } from './storage'
 
-const startedAtFormatter = new Intl.DateTimeFormat(undefined, {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-})
-
 function byTitle(
   left: ChecklistTemplate,
   right: ChecklistTemplate,
+  locale: Locale,
 ) {
-  return left.title.localeCompare(right.title, undefined, {
+  return left.title.localeCompare(right.title, toIntlLocale(locale), {
     sensitivity: 'base',
   })
 }
@@ -35,8 +32,12 @@ function byCheckedOrder(
   return (left.checkedOrder ?? 0) - (right.checkedOrder ?? 0)
 }
 
-function byLabel(left: ChecklistInstanceItem, right: ChecklistInstanceItem) {
-  return left.label.localeCompare(right.label, undefined, {
+function byLabel(
+  left: ChecklistInstanceItem,
+  right: ChecklistInstanceItem,
+  locale: Locale,
+) {
+  return left.label.localeCompare(right.label, toIntlLocale(locale), {
     sensitivity: 'base',
   })
 }
@@ -48,16 +49,21 @@ function byStartedAtDescending(
   return new Date(right.startedAt).getTime() - new Date(left.startedAt).getTime()
 }
 
-function formatStartedAt(value: string) {
-  return startedAtFormatter.format(new Date(value))
+function formatStartedAt(value: string, locale: Locale) {
+  return new Intl.DateTimeFormat(toIntlLocale(locale), {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(value))
 }
 
 function getCheckedItems(items: ChecklistInstanceItem[]) {
   return items.filter((item) => item.checkedOrder !== null).sort(byCheckedOrder)
 }
 
-function getUncheckedItems(items: ChecklistInstanceItem[]) {
-  return items.filter((item) => item.checkedOrder === null).sort(byLabel)
+function getUncheckedItems(items: ChecklistInstanceItem[], locale: Locale) {
+  return items
+    .filter((item) => item.checkedOrder === null)
+    .sort((left, right) => byLabel(left, right, locale))
 }
 
 function reorderAfterRemovingCheckedItem(
@@ -131,12 +137,11 @@ function ChecklistColumn({
   movingDirection = null,
 }: ChecklistColumnProps) {
   const interactive = typeof onItemPress === 'function'
-  const titleWithCount = `${items.length} ${title.toLowerCase()}`
 
   return (
     <section className="checklist-column">
       <div className="column-header">
-        <h3>{titleWithCount}</h3>
+        <h3>{title}</h3>
       </div>
       {items.length === 0 ? (
         <p className="empty-state">{emptyMessage}</p>
@@ -190,6 +195,7 @@ function App() {
   } | null>(null)
   const moveTimeoutRef = useRef<number | null>(null)
   const titleInputRef = useRef<HTMLInputElement | null>(null)
+  const text = messages[appState.locale]
 
   useEffect(() => {
     saveAppState(appState)
@@ -209,9 +215,13 @@ function App() {
     }
   }, [isCreatingChecklist, viewMode])
 
+  useEffect(() => {
+    document.documentElement.lang = toIntlLocale(appState.locale)
+  }, [appState.locale])
+
   const sortedTemplates = useMemo(
-    () => [...appState.templates].sort(byTitle),
-    [appState.templates],
+    () => [...appState.templates].sort((left, right) => byTitle(left, right, appState.locale)),
+    [appState.locale, appState.templates],
   )
 
   const selectedTemplate = useMemo(
@@ -258,10 +268,10 @@ function App() {
     return null
   }
 
-  const uncheckedItems = getUncheckedItems(activeInstance.items)
+  const uncheckedItems = getUncheckedItems(activeInstance.items, appState.locale)
   const checkedItems = getCheckedItems(activeInstance.items)
   const historyUncheckedItems = selectedHistoryInstance
-    ? getUncheckedItems(selectedHistoryInstance.items)
+    ? getUncheckedItems(selectedHistoryInstance.items, appState.locale)
     : []
   const historyCheckedItems = selectedHistoryInstance
     ? getCheckedItems(selectedHistoryInstance.items)
@@ -552,7 +562,7 @@ function App() {
     }
 
     const confirmed = window.confirm(
-      `Are you sure you want to remove checklist '${selectedTemplate.title}'?`,
+      text.removeChecklistConfirm(selectedTemplate.title),
     )
 
     if (!confirmed) {
@@ -575,75 +585,101 @@ function App() {
   return (
     <main className="app-shell">
       <section className="top-tabs-panel">
-        <div className="tabs-scroll" role="tablist" aria-label="Checklist titles">
-          {sortedTemplates.map((template) => (
+        <div className="top-bar-row">
+          <div
+            className="tabs-scroll"
+            role="tablist"
+            aria-label={text.checklistTabsLabel}
+          >
+            {sortedTemplates.map((template) => (
+              <button
+                key={template.id}
+                type="button"
+                role="tab"
+                aria-selected={
+                  template.id === selectedTemplate.id && viewMode === 'checklist'
+                }
+                className={
+                  template.id === selectedTemplate.id && viewMode === 'checklist'
+                    ? 'chip-button chip-button--active'
+                    : 'chip-button'
+                }
+                onClick={() => {
+                  setIsCreatingChecklist(false)
+                  setViewMode('checklist')
+                  updateState((state) => ({
+                    ...state,
+                    selectedTemplateId: template.id,
+                  }))
+                }}
+              >
+                {template.title}
+              </button>
+            ))}
+            <span className="tabs-separator" aria-hidden="true" />
             <button
-              key={template.id}
               type="button"
               role="tab"
-              aria-selected={
-                template.id === selectedTemplate.id && viewMode === 'checklist'
-              }
+              aria-selected={viewMode === 'history'}
               className={
-                template.id === selectedTemplate.id && viewMode === 'checklist'
+                viewMode === 'history'
                   ? 'chip-button chip-button--active'
                   : 'chip-button'
               }
               onClick={() => {
                 setIsCreatingChecklist(false)
-                setViewMode('checklist')
-                updateState((state) => ({
-                  ...state,
-                  selectedTemplateId: template.id,
-                }))
+                setViewMode('history')
               }}
             >
-              {template.title}
+              {text.history}
             </button>
-          ))}
-          <button
-            type="button"
-            role="tab"
-            aria-selected={viewMode === 'template'}
-            className={
-              viewMode === 'template'
-                ? 'chip-button chip-button--active'
-                : 'chip-button'
-            }
-            onClick={() => {
-              setIsCreatingChecklist(false)
-              setViewMode('template')
-            }}
-          >
-            Template editor
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={viewMode === 'history'}
-            className={
-              viewMode === 'history'
-                ? 'chip-button chip-button--active'
-                : 'chip-button'
-            }
-            onClick={() => {
-              setIsCreatingChecklist(false)
-              setViewMode('history')
-            }}
-          >
-            History
-          </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={viewMode === 'template'}
+              className={
+                viewMode === 'template'
+                  ? 'chip-button chip-button--active'
+                  : 'chip-button'
+              }
+              onClick={() => {
+                setIsCreatingChecklist(false)
+                setViewMode('template')
+              }}
+            >
+              {text.templateEditor}
+            </button>
+            <label className="language-picker">
+              <span className="sr-only">{text.languageLabel}</span>
+              <select
+                value={appState.locale}
+                aria-label={text.languageLabel}
+                onChange={(event) =>
+                  updateState((state) => ({
+                    ...state,
+                    locale: event.target.value as Locale,
+                  }))
+                }
+              >
+                {localeOptions.map((locale) => (
+                  <option key={locale} value={locale}>
+                    {locale}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         </div>
       </section>
 
       {viewMode === 'checklist' ? (
       <section className="hero-panel">
-        <p className="eyebrow">Checklist PWA</p>
+        <p className="eyebrow">{text.appBadge}</p>
         <div className="hero-header">
           <div>
             <h1>{activeInstance.title}</h1>
             <p className="muted-text">
-              Started {formatStartedAt(activeInstance.startedAt)}
+              {text.started(formatStartedAt(activeInstance.startedAt, appState.locale))}
             </p>
           </div>
           <button
@@ -651,22 +687,22 @@ function App() {
             className="primary-button"
             onClick={handleStartFreshChecklist}
           >
-            {`New checklist of ${activeInstance.title}`}
+            {text.newChecklistOf(activeInstance.title)}
           </button>
         </div>
         <div className="columns-grid columns-grid--split">
           <ChecklistColumn
-            title="To check"
+            title={text.toCheckTitle(uncheckedItems.length)}
             items={uncheckedItems}
-            emptyMessage="Everything is checked."
+            emptyMessage={text.everythingChecked}
             onItemPress={toggleItem}
             movingItemId={movingItem?.direction === 'to-checked' ? movingItem.itemId : null}
             movingDirection={movingItem?.direction === 'to-checked' ? movingItem.direction : null}
           />
           <ChecklistColumn
-            title="Checked"
+            title={text.checkedTitle(checkedItems.length)}
             items={checkedItems}
-            emptyMessage="Nothing checked yet."
+            emptyMessage={text.nothingCheckedYet}
             showOrder
             onItemPress={toggleItem}
             movingItemId={movingItem?.direction === 'to-unchecked' ? movingItem.itemId : null}
@@ -680,7 +716,7 @@ function App() {
       <section className="panel template-panel">
         <div className="panel-header">
           <div>
-            <h2>Template editor</h2>
+            <h2>{text.templateEditor}</h2>
           </div>
           <div className="template-actions">
             <button
@@ -691,7 +727,7 @@ function App() {
                 setNewChecklistTitle('')
               }}
             >
-              New checklist
+              {text.newChecklist}
             </button>
             <button
               type="button"
@@ -699,7 +735,7 @@ function App() {
               onClick={handleRemoveTemplate}
               disabled={isCreatingChecklist || appState.templates.length <= 1}
             >
-              Remove checklist
+              {text.removeChecklist}
             </button>
           </div>
         </div>
@@ -709,14 +745,14 @@ function App() {
           onSubmit={isCreatingChecklist ? handleCreateChecklist : handleSaveTitle}
         >
           <label className="field field--wide">
-            <span>Checklist title</span>
+            <span>{text.checklistTitleLabel}</span>
             {isCreatingChecklist ? (
               <input
                 ref={titleInputRef}
                 type="text"
                 value={newChecklistTitle}
                 onChange={(event) => setNewChecklistTitle(event.target.value)}
-                placeholder="Checklist title"
+                placeholder={text.checklistTitlePlaceholder}
                 required
               />
             ) : (
@@ -724,7 +760,7 @@ function App() {
                 name="title"
                 type="text"
                 defaultValue={selectedTemplate.title}
-                placeholder="Checklist title"
+                placeholder={text.checklistTitlePlaceholder}
                 required
               />
             )}
@@ -738,25 +774,22 @@ function App() {
                 : false
             }
           >
-            {isCreatingChecklist ? 'Create checklist' : 'Save title'}
+            {isCreatingChecklist ? text.createChecklist : text.saveTitle}
           </button>
         </form>
+        <p className="section-subtitle">{text.checklistItemsLabel}</p>
         <div className="editor-list">
           {isCreatingChecklist ? (
-            <p className="empty-state">
-              Give the checklist a title before adding or editing items.
-            </p>
+            <p className="empty-state">{text.giveTitleFirst}</p>
           ) : selectedTemplate.items.length === 0 ? (
-            <p className="empty-state">
-              No template items yet. Add the first one below.
-            </p>
+            <p className="empty-state">{text.noTemplateItems}</p>
           ) : (
             selectedTemplate.items.map((item) => (
               <div className="editor-row" key={`${item.id}-${item.label}`}>
                 <input
                   type="text"
                   defaultValue={item.label}
-                  aria-label={`Edit ${item.label}`}
+                  aria-label={text.editItemAria(item.label)}
                   onBlur={(event) =>
                     handleRenameItem(
                       item.id,
@@ -771,7 +804,7 @@ function App() {
                   className="danger-button"
                   onClick={() => handleRemoveItem(item.id)}
                 >
-                  Remove
+                  {text.removeItem}
                 </button>
               </div>
             ))
@@ -780,12 +813,12 @@ function App() {
         {isCreatingChecklist ? null : (
           <form className="inline-form" onSubmit={handleAddItem}>
             <label className="field field--wide">
-              <span>Add template item</span>
+              <span>{text.addTemplateItem}</span>
               <input
                 type="text"
                 value={newItemLabel}
                 onChange={(event) => setNewItemLabel(event.target.value)}
-                placeholder="Toothbrush"
+                placeholder={text.addTemplateItemPlaceholder}
               />
             </label>
             <button
@@ -793,7 +826,7 @@ function App() {
               className="secondary-button"
               disabled={newItemLabel.trim().length === 0}
             >
-              Add item
+              {text.addItem}
             </button>
           </form>
         )}
@@ -804,13 +837,11 @@ function App() {
       <section className="panel">
         <div className="panel-header">
           <div>
-            <h2>History</h2>
+            <h2>{text.history}</h2>
           </div>
         </div>
         {historyInstances.length === 0 ? (
-          <p className="empty-state">
-            Start a fresh checklist to begin building history.
-          </p>
+          <p className="empty-state">{text.historyEmpty}</p>
         ) : (
           <div className="history-layout">
             <div className="history-list">
@@ -834,10 +865,8 @@ function App() {
                     }
                   >
                     <strong>{instance.title}</strong>
-                    <span>Started {formatStartedAt(instance.startedAt)}</span>
-                    <span>
-                      {uncheckedCount} unchecked / {checkedCount} checked
-                    </span>
+                    <span>{text.started(formatStartedAt(instance.startedAt, appState.locale))}</span>
+                    <span>{text.historySummary(uncheckedCount, checkedCount)}</span>
                   </button>
                 )
               })}
@@ -848,20 +877,25 @@ function App() {
                   <div>
                     <h3>{selectedHistoryInstance.title}</h3>
                     <p className="muted-text">
-                      Started {formatStartedAt(selectedHistoryInstance.startedAt)}
+                      {text.started(
+                        formatStartedAt(
+                          selectedHistoryInstance.startedAt,
+                          appState.locale,
+                        ),
+                      )}
                     </p>
                   </div>
                 </div>
                 <div className="columns-grid columns-grid--split">
                   <ChecklistColumn
-                    title="To check"
+                    title={text.toCheckTitle(historyUncheckedItems.length)}
                     items={historyUncheckedItems}
-                    emptyMessage="Everything was checked."
+                    emptyMessage={text.everythingWasChecked}
                   />
                   <ChecklistColumn
-                    title="Checked"
+                    title={text.checkedTitle(historyCheckedItems.length)}
                     items={historyCheckedItems}
-                    emptyMessage="Nothing was checked."
+                    emptyMessage={text.nothingWasChecked}
                     showOrder
                   />
                 </div>

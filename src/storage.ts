@@ -1,3 +1,5 @@
+import { isLocale, type Locale } from './i18n'
+
 export type ChecklistTemplateItem = {
   id: string
   label: string
@@ -30,6 +32,7 @@ export type AppState = {
   instances: ChecklistInstance[]
   selectedTemplateId: string
   selectedHistoryInstanceId: string | null
+  locale: Locale
 }
 
 const STORAGE_KEY = 'tarkistuslista-state-v1'
@@ -94,6 +97,7 @@ export function createDefaultState(): AppState {
     instances: [starterInstance],
     selectedTemplateId: starterTemplate.id,
     selectedHistoryInstanceId: null,
+    locale: 'en',
   }
 }
 
@@ -142,7 +146,11 @@ function isInstance(value: unknown): value is ChecklistInstance {
   )
 }
 
-function isAppState(value: unknown): value is AppState {
+type PersistedAppState = Omit<AppState, 'locale'> & {
+  locale?: Locale
+}
+
+function isAppState(value: unknown): value is PersistedAppState {
   return (
     isRecord(value) &&
     Array.isArray(value.templates) &&
@@ -151,11 +159,12 @@ function isAppState(value: unknown): value is AppState {
     value.instances.every(isInstance) &&
     typeof value.selectedTemplateId === 'string' &&
     (typeof value.selectedHistoryInstanceId === 'string' ||
-      value.selectedHistoryInstanceId === null)
+      value.selectedHistoryInstanceId === null) &&
+    (value.locale === undefined || isLocale(value.locale))
   )
 }
 
-export function normalizeAppState(state: AppState): AppState {
+export function normalizeAppState(state: PersistedAppState): AppState {
   if (state.templates.length === 0) {
     return createDefaultState()
   }
@@ -176,6 +185,7 @@ export function normalizeAppState(state: AppState): AppState {
     ...state,
     selectedTemplateId,
     selectedHistoryInstanceId,
+    locale: isLocale(state.locale) ? state.locale : 'en',
   }
 }
 
