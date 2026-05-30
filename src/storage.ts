@@ -145,13 +145,17 @@ function isTemplate(value: unknown): value is PersistedChecklistTemplate {
   )
 }
 
-function isInstanceItem(value: unknown): value is ChecklistInstanceItem {
+function isPersistedInstanceItem(
+  value: unknown,
+): value is PersistedChecklistInstanceItem {
   return (
     isRecord(value) &&
     typeof value.id === 'string' &&
     typeof value.label === 'string' &&
     (typeof value.checkedOrder === 'number' || value.checkedOrder === null) &&
-    (typeof value.checkedAt === 'string' || value.checkedAt === null)
+    (value.checkedAt === undefined ||
+      typeof value.checkedAt === 'string' ||
+      value.checkedAt === null)
   )
 }
 
@@ -174,7 +178,7 @@ function isInstance(value: unknown): value is PersistedChecklistInstance {
     (value.orderingMode === undefined ||
       isChecklistOrderingMode(value.orderingMode)) &&
     Array.isArray(value.items) &&
-    value.items.every(isInstanceItem)
+    value.items.every(isPersistedInstanceItem)
   )
 }
 
