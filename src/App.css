@@ -324,6 +324,11 @@
   box-sizing: border-box;
 }
 
+.item-card--checked {
+  background: color-mix(in srgb, #22c55e 10%, var(--surface));
+  border-color: color-mix(in srgb, #22c55e 28%, var(--border));
+}
+
 .item-button {
   text-align: left;
 }

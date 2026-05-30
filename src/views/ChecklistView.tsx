@@ -53,6 +53,7 @@ export function ChecklistView({
           items={checkedItems}
           emptyMessage={text.nothingCheckedYet}
           showOrder
+          variant="checked"
           onItemPress={onToggleItem}
           hiddenItemIds={hiddenItemIds}
           onItemElement={onRegisterItemElement}

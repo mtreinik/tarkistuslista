@@ -6,6 +6,7 @@ export type ChecklistColumnProps = {
   items: ChecklistInstanceItem[]
   emptyMessage: string
   showOrder?: boolean
+  variant?: 'default' | 'checked'
   onItemPress?: (itemId: string) => void
   hiddenItemIds?: readonly string[]
   onItemElement?: (itemId: string, element: HTMLElement | null) => void
@@ -17,12 +18,23 @@ export function ChecklistColumn({
   items,
   emptyMessage,
   showOrder = false,
+  variant = 'default',
   onItemPress,
   hiddenItemIds = [],
   onItemElement,
   layoutAnimationDuration = 320,
 }: ChecklistColumnProps) {
   const interactive = typeof onItemPress === 'function'
+  const itemClassName =
+    variant === 'checked' ? 'item-card item-card--checked' : 'item-card'
+  const buttonClassName = (itemId: string) =>
+    hiddenItemIds.includes(itemId)
+      ? variant === 'checked'
+        ? 'item-button item-card--checked item-button--hidden'
+        : 'item-button item-button--hidden'
+      : variant === 'checked'
+        ? 'item-button item-card--checked'
+        : 'item-button'
   const itemRefs = useRef<Map<string, HTMLLIElement>>(new Map())
   const previousPositionsRef = useRef<Map<string, number>>(new Map())
 
@@ -129,11 +141,7 @@ export function ChecklistColumn({
               {interactive ? (
                 <button
                   type="button"
-                  className={
-                    hiddenItemIds.includes(item.id)
-                      ? 'item-button item-button--hidden'
-                      : 'item-button'
-                  }
+                  className={buttonClassName(item.id)}
                   onClick={() => onItemPress(item.id)}
                   disabled={hiddenItemIds.includes(item.id)}
                   ref={(element) => onItemElement?.(item.id, element)}
@@ -147,8 +155,8 @@ export function ChecklistColumn({
                 <div
                   className={
                     hiddenItemIds.includes(item.id)
-                      ? 'item-card item-card--hidden'
-                      : 'item-card'
+                      ? `${itemClassName} item-card--hidden`
+                      : itemClassName
                   }
                   ref={(element) => onItemElement?.(item.id, element)}
                 >
