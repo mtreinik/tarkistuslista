@@ -87,7 +87,7 @@ export const messages: Record<Locale, Messages> = {
     everythingWasChecked: 'Everything was checked.',
     nothingWasChecked: 'Nothing was checked.',
     started: (value) => `Started ${value}`,
-    newChecklistOf: (title) => `New checklist of ${title}`,
+    newChecklistOf: (title) => `New ${title}`,
     removeChecklistConfirm: (title) =>
       `Are you sure you want to remove checklist '${title}'?`,
     historySummary: (unchecked, checked) =>
@@ -124,7 +124,7 @@ export const messages: Record<Locale, Messages> = {
     everythingWasChecked: 'Kaikki oli tarkistettu.',
     nothingWasChecked: 'Mitään ei ollut tarkistettu.',
     started: (value) => `Aloitettu ${value}`,
-    newChecklistOf: (title) => `Uusi tarkistuslista: ${title}`,
+    newChecklistOf: (title) => `Uusi ${title}`,
     removeChecklistConfirm: (title) =>
       `Haluatko varmasti poistaa tarkistuslistan '${title}'?`,
     historySummary: (unchecked, checked) =>
@@ -162,7 +162,7 @@ export const messages: Record<Locale, Messages> = {
     everythingWasChecked: 'Allt var kontrollerat.',
     nothingWasChecked: 'Ingenting var kontrollerat.',
     started: (value) => `Startad ${value}`,
-    newChecklistOf: (title) => `Ny checklista för ${title}`,
+    newChecklistOf: (title) => `Ny ${title}`,
     removeChecklistConfirm: (title) =>
       `Är du säker på att du vill ta bort checklistan '${title}'?`,
     historySummary: (unchecked, checked) =>

@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'react'
 import type { ChecklistInstanceItem } from '../storage'
 
 export type ChecklistColumnProps = {
@@ -6,8 +7,9 @@ export type ChecklistColumnProps = {
   emptyMessage: string
   showOrder?: boolean
   onItemPress?: (itemId: string) => void
-  movingItemId?: string | null
-  movingDirection?: 'to-checked' | 'to-unchecked' | null
+  hiddenItemIds?: readonly string[]
+  onItemElement?: (itemId: string, element: HTMLElement | null) => void
+  layoutAnimationDuration?: number
 }
 
 export function ChecklistColumn({
@@ -16,10 +18,92 @@ export function ChecklistColumn({
   emptyMessage,
   showOrder = false,
   onItemPress,
-  movingItemId = null,
-  movingDirection = null,
+  hiddenItemIds = [],
+  onItemElement,
+  layoutAnimationDuration = 320,
 }: ChecklistColumnProps) {
   const interactive = typeof onItemPress === 'function'
+  const itemRefs = useRef<Map<string, HTMLLIElement>>(new Map())
+  const previousPositionsRef = useRef<Map<string, number>>(new Map())
+
+  useLayoutEffect(() => {
+    const nextPositions = new Map<string, number>()
+    const listTop = itemRefs.current
+      .values()
+      .next().value
+      ?.parentElement?.getBoundingClientRect().top
+
+    items.forEach((item) => {
+      const element = itemRefs.current.get(item.id)
+
+      if (element && listTop !== undefined) {
+        nextPositions.set(item.id, element.getBoundingClientRect().top - listTop)
+      }
+    })
+
+    if (previousPositionsRef.current.size === 0) {
+      previousPositionsRef.current = nextPositions
+      return
+    }
+
+    items.forEach((item) => {
+      const element = itemRefs.current.get(item.id)
+
+      if (!element) {
+        return
+      }
+
+      const previousTop = previousPositionsRef.current.get(item.id)
+      const nextTop = nextPositions.get(item.id)
+
+      if (nextTop === undefined) {
+        return
+      }
+
+      if (previousTop === undefined) {
+        element.animate(
+          [
+            {
+              opacity: 0,
+              transform: 'translateY(20px) scale(0.98)',
+            },
+            {
+              opacity: 1,
+              transform: 'translateY(0) scale(1)',
+            },
+          ],
+          {
+            duration: layoutAnimationDuration,
+            easing: 'ease-out',
+          },
+        )
+        return
+      }
+
+      const deltaY = previousTop - nextTop
+
+      if (Math.abs(deltaY) < 1) {
+        return
+      }
+
+      element.animate(
+        [
+          {
+            transform: `translateY(${deltaY}px)`,
+          },
+          {
+            transform: 'translateY(0)',
+          },
+        ],
+        {
+          duration: layoutAnimationDuration,
+          easing: 'ease-out',
+        },
+      )
+    })
+
+    previousPositionsRef.current = nextPositions
+  }, [items, layoutAnimationDuration])
 
   return (
     <section className="checklist-column">
@@ -31,17 +115,28 @@ export function ChecklistColumn({
       ) : (
         <ul className="item-list">
           {items.map((item) => (
-            <li key={item.id}>
+            <li
+              key={item.id}
+              className="item-list__entry"
+              ref={(element) => {
+                if (element) {
+                  itemRefs.current.set(item.id, element)
+                } else {
+                  itemRefs.current.delete(item.id)
+                }
+              }}
+            >
               {interactive ? (
                 <button
                   type="button"
                   className={
-                    item.id === movingItemId && movingDirection
-                      ? `item-button item-button--${movingDirection}`
+                    hiddenItemIds.includes(item.id)
+                      ? 'item-button item-button--hidden'
                       : 'item-button'
                   }
                   onClick={() => onItemPress(item.id)}
-                  disabled={item.id === movingItemId}
+                  disabled={hiddenItemIds.includes(item.id)}
+                  ref={(element) => onItemElement?.(item.id, element)}
                 >
                   <span className="item-label">{item.label}</span>
                   {showOrder && item.checkedOrder !== null ? (
@@ -49,7 +144,14 @@ export function ChecklistColumn({
                   ) : null}
                 </button>
               ) : (
-                <div className="item-card">
+                <div
+                  className={
+                    hiddenItemIds.includes(item.id)
+                      ? 'item-card item-card--hidden'
+                      : 'item-card'
+                  }
+                  ref={(element) => onItemElement?.(item.id, element)}
+                >
                   <span className="item-label">{item.label}</span>
                   {showOrder && item.checkedOrder !== null ? (
                     <span className="order-badge">{item.checkedOrder}</span>

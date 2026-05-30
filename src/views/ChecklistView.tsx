@@ -8,10 +8,10 @@ type ChecklistViewProps = {
   startedAtLabel: string
   uncheckedItems: ChecklistInstanceItem[]
   checkedItems: ChecklistInstanceItem[]
-  movingItem: {
-    itemId: string
-    direction: 'to-checked' | 'to-unchecked'
-  } | null
+  hiddenItemIds: string[]
+  uncheckedLayoutAnimationDuration: number
+  checkedLayoutAnimationDuration: number
+  onRegisterItemElement: (itemId: string, element: HTMLElement | null) => void
   onToggleItem: (itemId: string) => void
   onStartFreshChecklist: () => void
 }
@@ -22,7 +22,10 @@ export function ChecklistView({
   startedAtLabel,
   uncheckedItems,
   checkedItems,
-  movingItem,
+  hiddenItemIds,
+  uncheckedLayoutAnimationDuration,
+  checkedLayoutAnimationDuration,
+  onRegisterItemElement,
   onToggleItem,
   onStartFreshChecklist,
 }: ChecklistViewProps) {
@@ -44,23 +47,25 @@ export function ChecklistView({
       </div>
       <div className="columns-grid columns-grid--split">
         <ChecklistColumn
+          key={`${activeInstance.id}-unchecked`}
           title={text.toCheckTitle(uncheckedItems.length, activeInstance.items.length)}
           items={uncheckedItems}
           emptyMessage={text.everythingChecked}
           onItemPress={onToggleItem}
-          movingItemId={movingItem?.direction === 'to-checked' ? movingItem.itemId : null}
-          movingDirection={movingItem?.direction === 'to-checked' ? movingItem.direction : null}
+          hiddenItemIds={hiddenItemIds}
+          onItemElement={onRegisterItemElement}
+          layoutAnimationDuration={uncheckedLayoutAnimationDuration}
         />
         <ChecklistColumn
+          key={`${activeInstance.id}-checked`}
           title={text.checkedTitle(checkedItems.length, activeInstance.items.length)}
           items={checkedItems}
           emptyMessage={text.nothingCheckedYet}
           showOrder
           onItemPress={onToggleItem}
-          movingItemId={movingItem?.direction === 'to-unchecked' ? movingItem.itemId : null}
-          movingDirection={
-            movingItem?.direction === 'to-unchecked' ? movingItem.direction : null
-          }
+          hiddenItemIds={hiddenItemIds}
+          onItemElement={onRegisterItemElement}
+          layoutAnimationDuration={checkedLayoutAnimationDuration}
         />
       </div>
     </section>

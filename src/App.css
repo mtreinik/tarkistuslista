@@ -6,16 +6,15 @@
 
 .hero-panel,
 .panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  padding: 1rem;
-  box-shadow: var(--shadow);
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
   text-align: left;
 }
 
 .hero-panel {
-  padding: 1.25rem;
+  padding: 0;
 }
 
 .menu-toggle {
@@ -254,6 +253,11 @@
   margin: 0;
 }
 
+.item-list__entry {
+  position: relative;
+  will-change: transform, opacity;
+}
+
 .item-button,
 .item-card {
   width: 100%;
@@ -277,16 +281,9 @@
   cursor: default;
 }
 
-.item-button--to-checked {
-  --move-x: 0px;
-  --move-y: 72px;
-  animation: move-item 220ms ease-out forwards;
-}
-
-.item-button--to-unchecked {
-  --move-x: 0px;
-  --move-y: -72px;
-  animation: move-item 220ms ease-out forwards;
+.item-button--hidden,
+.item-card--hidden {
+  visibility: hidden;
 }
 
 .item-label {
@@ -466,6 +463,17 @@
   color: var(--danger);
 }
 
+.item-flight {
+  position: fixed;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.item-card--flying {
+  height: 100%;
+  box-shadow: var(--shadow);
+}
+
 @media (max-width: 860px) {
   .panel-header,
   .history-preview__header {
@@ -531,17 +539,5 @@
 
   .template-actions {
     justify-content: flex-end;
-  }
-}
-
-@keyframes move-item {
-  from {
-    transform: translate(0, 0);
-    opacity: 1;
-  }
-
-  to {
-    transform: translate(var(--move-x), var(--move-y));
-    opacity: 0.35;
   }
 }

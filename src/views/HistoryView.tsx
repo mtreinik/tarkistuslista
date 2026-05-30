@@ -86,6 +86,7 @@ export function HistoryView({
               </div>
               <div className="columns-grid columns-grid--split">
                 <ChecklistColumn
+                  key={`${selectedHistoryInstance.id}-unchecked`}
                   title={text.toCheckTitle(
                     historyUncheckedItems.length,
                     selectedHistoryInstance.items.length,
@@ -94,6 +95,7 @@ export function HistoryView({
                   emptyMessage={text.everythingWasChecked}
                 />
                 <ChecklistColumn
+                  key={`${selectedHistoryInstance.id}-checked`}
                   title={text.checkedTitle(
                     historyCheckedItems.length,
                     selectedHistoryInstance.items.length,

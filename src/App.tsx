@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { messages, toIntlLocale, type Locale } from './i18n'
 import { AppMenu } from './components/AppMenu'
@@ -121,6 +121,35 @@ function updateLatestInstanceForTemplate(
 }
 
 type ViewMode = 'checklist' | 'template' | 'history'
+type ItemRect = {
+  top: number
+  left: number
+  width: number
+  height: number
+}
+
+type MovingItem = {
+  itemId: string
+  label: string
+  orderBadge: number | null
+  targetList: 'unchecked' | 'checked'
+  sourceRect: ItemRect
+  targetRect: ItemRect | null
+}
+
+const ITEM_MOVE_DURATION_MS = 960
+const SOURCE_LIST_REORDER_DURATION_MS = 320
+
+function getItemRect(element: HTMLElement): ItemRect {
+  const rect = element.getBoundingClientRect()
+
+  return {
+    top: rect.top,
+    left: rect.left,
+    width: rect.width,
+    height: rect.height,
+  }
+}
 
 function App() {
   const [appState, setAppState] = useState<AppState>(() => loadAppState())
@@ -129,11 +158,10 @@ function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('checklist')
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isCreatingChecklist, setIsCreatingChecklist] = useState(false)
-  const [movingItem, setMovingItem] = useState<{
-    itemId: string
-    direction: 'to-checked' | 'to-unchecked'
-  } | null>(null)
-  const moveTimeoutRef = useRef<number | null>(null)
+  const [movingItems, setMovingItems] = useState<MovingItem[]>([])
+  const itemElementRefs = useRef<Map<string, HTMLElement>>(new Map())
+  const movingOverlayRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+  const movingAnimationRefs = useRef<Map<string, Animation>>(new Map())
   const text = messages[appState.locale]
 
   useEffect(() => {
@@ -141,10 +169,11 @@ function App() {
   }, [appState])
 
   useEffect(() => {
+    const animationRefs = movingAnimationRefs.current
+
     return () => {
-      if (moveTimeoutRef.current !== null) {
-        window.clearTimeout(moveTimeoutRef.current)
-      }
+      animationRefs.forEach((animation) => animation.cancel())
+      animationRefs.clear()
     }
   }, [])
 
@@ -197,39 +226,188 @@ function App() {
     setAppState((currentState) => normalizeAppState(updater(currentState)))
   }
 
+  const uncheckedItems = useMemo(
+    () => (activeInstance ? getUncheckedItems(activeInstance.items, appState.locale) : []),
+    [activeInstance, appState.locale],
+  )
+  const checkedItems = useMemo(
+    () => (activeInstance ? getCheckedItems(activeInstance.items) : []),
+    [activeInstance],
+  )
+  const historyUncheckedItems = useMemo(
+    () =>
+      selectedHistoryInstance
+        ? getUncheckedItems(selectedHistoryInstance.items, appState.locale)
+        : [],
+    [appState.locale, selectedHistoryInstance],
+  )
+  const historyCheckedItems = useMemo(
+    () =>
+      selectedHistoryInstance ? getCheckedItems(selectedHistoryInstance.items) : [],
+    [selectedHistoryInstance],
+  )
+
+  const hiddenItemIds = useMemo(
+    () => movingItems.map((item) => item.itemId),
+    [movingItems],
+  )
+  const uncheckedLayoutAnimationDuration = movingItems.some(
+    (item) => item.targetList === 'unchecked',
+  )
+    ? ITEM_MOVE_DURATION_MS
+    : SOURCE_LIST_REORDER_DURATION_MS
+  const checkedLayoutAnimationDuration = movingItems.some(
+    (item) => item.targetList === 'checked',
+  )
+    ? ITEM_MOVE_DURATION_MS
+    : SOURCE_LIST_REORDER_DURATION_MS
+
+  useLayoutEffect(() => {
+    if (!activeInstance) {
+      return
+    }
+
+    const nextTargetRects = new Map<string, ItemRect>()
+
+    movingItems.forEach((movingItem) => {
+      if (movingItem.targetRect !== null) {
+        return
+      }
+
+      const targetElement = itemElementRefs.current.get(movingItem.itemId)
+
+      if (!targetElement) {
+        return
+      }
+
+      nextTargetRects.set(movingItem.itemId, getItemRect(targetElement))
+    })
+
+    if (nextTargetRects.size === 0) {
+      return
+    }
+
+    setMovingItems((current) =>
+      current.map((movingItem) => {
+        const targetRect = nextTargetRects.get(movingItem.itemId)
+
+        return targetRect && movingItem.targetRect === null
+          ? {
+              ...movingItem,
+              targetRect,
+            }
+          : movingItem
+      }),
+    )
+  }, [activeInstance, checkedItems, movingItems, uncheckedItems])
+
+  useEffect(() => {
+    movingItems.forEach((movingItem) => {
+      if (
+        !movingItem.targetRect ||
+        movingAnimationRefs.current.has(movingItem.itemId)
+      ) {
+        return
+      }
+
+      const overlayElement = movingOverlayRefs.current.get(movingItem.itemId)
+
+      if (!overlayElement) {
+        return
+      }
+
+      const animation = overlayElement.animate(
+        [
+          {
+            top: `${movingItem.sourceRect.top}px`,
+            left: `${movingItem.sourceRect.left}px`,
+            width: `${movingItem.sourceRect.width}px`,
+            height: `${movingItem.sourceRect.height}px`,
+          },
+          {
+            top: `${movingItem.targetRect.top}px`,
+            left: `${movingItem.targetRect.left}px`,
+            width: `${movingItem.targetRect.width}px`,
+            height: `${movingItem.targetRect.height}px`,
+          },
+        ],
+        {
+          duration: ITEM_MOVE_DURATION_MS,
+          easing: 'ease-out',
+          fill: 'forwards',
+        },
+      )
+
+      movingAnimationRefs.current.set(movingItem.itemId, animation)
+
+      animation.finished
+        .then(() => {
+          if (movingAnimationRefs.current.get(movingItem.itemId) !== animation) {
+            return
+          }
+
+          movingAnimationRefs.current.delete(movingItem.itemId)
+          movingOverlayRefs.current.delete(movingItem.itemId)
+          setMovingItems((current) =>
+            current.filter((item) => item.itemId !== movingItem.itemId),
+          )
+        })
+        .catch(() => {})
+    })
+  }, [movingItems])
+
+  const registerItemElement = (itemId: string, element: HTMLElement | null) => {
+    if (element) {
+      itemElementRefs.current.set(itemId, element)
+      return
+    }
+
+    itemElementRefs.current.delete(itemId)
+  }
+
+  const registerMovingOverlayElement = (
+    itemId: string,
+    element: HTMLDivElement | null,
+  ) => {
+    if (element) {
+      movingOverlayRefs.current.set(itemId, element)
+      return
+    }
+
+    movingOverlayRefs.current.delete(itemId)
+  }
+
   if (!selectedTemplate || !activeInstance) {
     return null
   }
 
-  const uncheckedItems = getUncheckedItems(activeInstance.items, appState.locale)
-  const checkedItems = getCheckedItems(activeInstance.items)
-  const historyUncheckedItems = selectedHistoryInstance
-    ? getUncheckedItems(selectedHistoryInstance.items, appState.locale)
-    : []
-  const historyCheckedItems = selectedHistoryInstance
-    ? getCheckedItems(selectedHistoryInstance.items)
-    : []
-
   const toggleItem = (itemId: string) => {
-    if (movingItem) {
-      return
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
     }
 
     const targetItem = activeInstance.items.find((item) => item.id === itemId)
+    const sourceElement = itemElementRefs.current.get(itemId)
 
-    if (!targetItem) {
+    if (!targetItem || !sourceElement) {
       return
     }
 
-    const direction =
-      targetItem.checkedOrder === null ? 'to-checked' : 'to-unchecked'
+    const targetList = targetItem.checkedOrder === null ? 'checked' : 'unchecked'
 
-    setMovingItem({
-      itemId,
-      direction,
-    })
+    setMovingItems((current) => [
+      ...current,
+      {
+        itemId,
+        label: targetItem.label,
+        orderBadge:
+          targetList === 'checked' ? getCheckedItems(activeInstance.items).length + 1 : null,
+        targetList,
+        sourceRect: getItemRect(sourceElement),
+        targetRect: null,
+      },
+    ])
 
-    moveTimeoutRef.current = window.setTimeout(() => {
     updateState((state) => ({
       ...state,
       instances: updateLatestInstanceForTemplate(
@@ -275,9 +453,6 @@ function App() {
         },
       ),
     }))
-      setMovingItem(null)
-      moveTimeoutRef.current = null
-    }, 180)
   }
 
   const handleCreateChecklist = (title: string) => {
@@ -479,7 +654,10 @@ function App() {
         startedAtLabel={formatStartedLabel(activeInstance.startedAt)}
         uncheckedItems={uncheckedItems}
         checkedItems={checkedItems}
-        movingItem={movingItem}
+        hiddenItemIds={hiddenItemIds}
+        uncheckedLayoutAnimationDuration={uncheckedLayoutAnimationDuration}
+        checkedLayoutAnimationDuration={checkedLayoutAnimationDuration}
+        onRegisterItemElement={registerItemElement}
         onToggleItem={toggleItem}
         onStartFreshChecklist={handleStartFreshChecklist}
       />
@@ -538,6 +716,26 @@ function App() {
       />
 
       {activeView}
+      {movingItems.map((movingItem) => (
+        <div
+          key={movingItem.itemId}
+          ref={(element) => registerMovingOverlayElement(movingItem.itemId, element)}
+          className="item-flight"
+          style={{
+            top: `${movingItem.sourceRect.top}px`,
+            left: `${movingItem.sourceRect.left}px`,
+            width: `${movingItem.sourceRect.width}px`,
+            height: `${movingItem.sourceRect.height}px`,
+          }}
+        >
+          <div className="item-card item-card--flying">
+            <span className="item-label">{movingItem.label}</span>
+            {movingItem.orderBadge !== null ? (
+              <span className="order-badge">{movingItem.orderBadge}</span>
+            ) : null}
+          </div>
+        </div>
+      ))}
     </main>
   )
 }
