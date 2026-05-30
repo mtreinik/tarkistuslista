@@ -1,6 +1,11 @@
 export type Locale = 'en' | 'fi' | 'sw'
 
 export const localeOptions: Locale[] = ['en', 'fi', 'sw']
+export const localeLabels: Record<Locale, string> = {
+  en: 'English',
+  fi: 'Finnish (suomi)',
+  sw: 'Swedish (svenska)',
+}
 
 export function isLocale(value: unknown): value is Locale {
   return value === 'en' || value === 'fi' || value === 'sw'
@@ -23,6 +28,9 @@ type Messages = {
   history: string
   historyEmpty: string
   languageLabel: string
+  navigationLabel: string
+  openMenu: string
+  closeMenu: string
   checklistTabsLabel: string
   checklistTitleLabel: string
   checklistItemsLabel: string
@@ -45,8 +53,8 @@ type Messages = {
   newChecklistOf: (title: string) => string
   removeChecklistConfirm: (title: string) => string
   historySummary: (unchecked: number, checked: number) => string
-  toCheckTitle: (count: number) => string
-  checkedTitle: (count: number) => string
+  toCheckTitle: (count: number, total: number) => string
+  checkedTitle: (count: number, total: number) => string
   editItemAria: (label: string) => string
 }
 
@@ -57,6 +65,9 @@ export const messages: Record<Locale, Messages> = {
     history: 'History',
     historyEmpty: 'Start a new checklist to begin building history.',
     languageLabel: 'Language',
+    navigationLabel: 'App navigation',
+    openMenu: 'Open menu',
+    closeMenu: 'Close menu',
     checklistTabsLabel: 'Checklist titles',
     checklistTitleLabel: 'Checklist title',
     checklistItemsLabel: 'Checklist items',
@@ -81,8 +92,8 @@ export const messages: Record<Locale, Messages> = {
       `Are you sure you want to remove checklist '${title}'?`,
     historySummary: (unchecked, checked) =>
       `${unchecked} unchecked / ${checked} checked`,
-    toCheckTitle: (count) => `${count} to check`,
-    checkedTitle: (count) => `${count} checked`,
+    toCheckTitle: (count, total) => `${count} / ${total} to check`,
+    checkedTitle: (count, total) => `${count} / ${total} checked`,
     editItemAria: (label) => `Edit ${label}`,
   },
   fi: {
@@ -91,6 +102,9 @@ export const messages: Record<Locale, Messages> = {
     history: 'Historia',
     historyEmpty: 'Aloita uusi tarkistuslista, niin historiaa alkaa kertyä.',
     languageLabel: 'Kieli',
+    navigationLabel: 'Sovelluksen valikko',
+    openMenu: 'Avaa valikko',
+    closeMenu: 'Sulje valikko',
     checklistTabsLabel: 'Tarkistuslistat',
     checklistTitleLabel: 'Tarkistuslistan nimi',
     checklistItemsLabel: 'Tarkistuslistan kohdat',
@@ -115,8 +129,8 @@ export const messages: Record<Locale, Messages> = {
       `Haluatko varmasti poistaa tarkistuslistan '${title}'?`,
     historySummary: (unchecked, checked) =>
       `${unchecked} tarkistamatta / ${checked} tarkistettu`,
-    toCheckTitle: (count) => `${count} tarkistamatta`,
-    checkedTitle: (count) => `${count} tarkistettu`,
+    toCheckTitle: (count, total) => `${count} / ${total} tarkistamatta`,
+    checkedTitle: (count, total) => `${count} / ${total} tarkistettu`,
     editItemAria: (label) => `Muokkaa kohtaa ${label}`,
   },
   sw: {
@@ -125,6 +139,9 @@ export const messages: Record<Locale, Messages> = {
     history: 'Historik',
     historyEmpty: 'Starta en ny checklista för att börja bygga historik.',
     languageLabel: 'Språk',
+    navigationLabel: 'Appnavigering',
+    openMenu: 'Öppna meny',
+    closeMenu: 'Stäng meny',
     checklistTabsLabel: 'Checklistor',
     checklistTitleLabel: 'Checklistans namn',
     checklistItemsLabel: 'Checklistans punkter',
@@ -150,8 +167,8 @@ export const messages: Record<Locale, Messages> = {
       `Är du säker på att du vill ta bort checklistan '${title}'?`,
     historySummary: (unchecked, checked) =>
       `${unchecked} okontrollerade / ${checked} kontrollerade`,
-    toCheckTitle: (count) => `${count} att kontrollera`,
-    checkedTitle: (count) => `${count} kontrollerade`,
+    toCheckTitle: (count, total) => `${count} / ${total} att kontrollera`,
+    checkedTitle: (count, total) => `${count} / ${total} kontrollerade`,
     editItemAria: (label) => `Redigera ${label}`,
   },
 }

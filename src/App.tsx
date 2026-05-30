@@ -1,7 +1,7 @@
 import type { FormEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
-import { localeOptions, messages, toIntlLocale, type Locale } from './i18n'
+import { localeLabels, localeOptions, messages, toIntlLocale, type Locale } from './i18n'
 import {
   type AppState,
   type ChecklistInstance,
@@ -188,6 +188,7 @@ function App() {
   const [newChecklistTitle, setNewChecklistTitle] = useState('')
   const [newItemLabel, setNewItemLabel] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('checklist')
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isCreatingChecklist, setIsCreatingChecklist] = useState(false)
   const [movingItem, setMovingItem] = useState<{
     itemId: string
@@ -195,6 +196,8 @@ function App() {
   } | null>(null)
   const moveTimeoutRef = useRef<number | null>(null)
   const titleInputRef = useRef<HTMLInputElement | null>(null)
+  const addItemInputRef = useRef<HTMLInputElement | null>(null)
+  const historyPreviewRef = useRef<HTMLDivElement | null>(null)
   const text = messages[appState.locale]
 
   useEffect(() => {
@@ -218,6 +221,24 @@ function App() {
   useEffect(() => {
     document.documentElement.lang = toIntlLocale(appState.locale)
   }, [appState.locale])
+
+  useEffect(() => {
+    if (!isMenuOpen) {
+      return
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsMenuOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isMenuOpen])
 
   const sortedTemplates = useMemo(
     () => [...appState.templates].sort((left, right) => byTitle(left, right, appState.locale)),
@@ -474,6 +495,13 @@ function App() {
     }))
 
     setNewItemLabel('')
+    window.requestAnimationFrame(() => {
+      addItemInputRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      })
+      addItemInputRef.current?.focus()
+    })
   }
 
   const handleRenameItem = (
@@ -582,95 +610,137 @@ function App() {
     })
   }
 
+  const handleSelectTemplate = (templateId: string) => {
+    setIsCreatingChecklist(false)
+    setViewMode('checklist')
+    setIsMenuOpen(false)
+    updateState((state) => ({
+      ...state,
+      selectedTemplateId: templateId,
+    }))
+  }
+
+  const handleSelectViewMode = (mode: ViewMode) => {
+    setIsCreatingChecklist(false)
+    setViewMode(mode)
+    setIsMenuOpen(false)
+  }
+
+  const handleSelectHistoryInstance = (instanceId: string) => {
+    updateState((state) => ({
+      ...state,
+      selectedHistoryInstanceId: instanceId,
+    }))
+
+    if (!window.matchMedia('(max-width: 860px)').matches) {
+      return
+    }
+
+    window.requestAnimationFrame(() => {
+      historyPreviewRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    })
+  }
+
   return (
     <main className="app-shell">
-      <section className="top-tabs-panel">
-        <div className="top-bar-row">
-          <div
-            className="tabs-scroll"
-            role="tablist"
-            aria-label={text.checklistTabsLabel}
-          >
-            {sortedTemplates.map((template) => (
-              <button
-                key={template.id}
-                type="button"
-                role="tab"
-                aria-selected={
-                  template.id === selectedTemplate.id && viewMode === 'checklist'
-                }
-                className={
-                  template.id === selectedTemplate.id && viewMode === 'checklist'
-                    ? 'chip-button chip-button--active'
-                    : 'chip-button'
-                }
-                onClick={() => {
-                  setIsCreatingChecklist(false)
-                  setViewMode('checklist')
-                  updateState((state) => ({
-                    ...state,
-                    selectedTemplateId: template.id,
-                  }))
-                }}
-              >
-                {template.title}
-              </button>
-            ))}
-            <span className="tabs-separator" aria-hidden="true" />
-            <button
-              type="button"
-              role="tab"
-              aria-selected={viewMode === 'history'}
-              className={
-                viewMode === 'history'
-                  ? 'chip-button chip-button--active'
-                  : 'chip-button'
-              }
-              onClick={() => {
-                setIsCreatingChecklist(false)
-                setViewMode('history')
-              }}
-            >
-              {text.history}
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={viewMode === 'template'}
-              className={
-                viewMode === 'template'
-                  ? 'chip-button chip-button--active'
-                  : 'chip-button'
-              }
-              onClick={() => {
-                setIsCreatingChecklist(false)
-                setViewMode('template')
-              }}
-            >
-              {text.templateEditor}
-            </button>
-            <label className="language-picker">
-              <span className="sr-only">{text.languageLabel}</span>
-              <select
-                value={appState.locale}
-                aria-label={text.languageLabel}
-                onChange={(event) =>
-                  updateState((state) => ({
-                    ...state,
-                    locale: event.target.value as Locale,
-                  }))
-                }
-              >
-                {localeOptions.map((locale) => (
-                  <option key={locale} value={locale}>
-                    {locale}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </div>
-      </section>
+      <button
+        type="button"
+        className={isMenuOpen ? 'menu-toggle menu-toggle--open' : 'menu-toggle'}
+        aria-expanded={isMenuOpen}
+        aria-controls="app-menu-drawer"
+        aria-label={isMenuOpen ? text.closeMenu : text.openMenu}
+        onClick={() => setIsMenuOpen((open) => !open)}
+      >
+        <span className="menu-toggle__line" aria-hidden="true" />
+        <span className="menu-toggle__line" aria-hidden="true" />
+        <span className="menu-toggle__line" aria-hidden="true" />
+      </button>
+
+      {isMenuOpen ? (
+        <>
+          <button
+            type="button"
+            className="menu-backdrop"
+            aria-label={text.closeMenu}
+            onClick={() => setIsMenuOpen(false)}
+          />
+          <aside className="menu-drawer" id="app-menu-drawer">
+            <nav className="menu-nav" aria-label={text.navigationLabel}>
+              <div className="menu-section">
+                <p className="menu-section__title">{text.checklistTabsLabel}</p>
+                <div className="menu-list">
+                  {sortedTemplates.map((template) => (
+                    <button
+                      key={template.id}
+                      type="button"
+                      className={
+                        template.id === selectedTemplate.id && viewMode === 'checklist'
+                          ? 'chip-button chip-button--active menu-button'
+                          : 'chip-button menu-button'
+                      }
+                      onClick={() => handleSelectTemplate(template.id)}
+                    >
+                      {template.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="menu-separator" aria-hidden="true" />
+
+              <div className="menu-section">
+                <div className="menu-list">
+                  <button
+                    type="button"
+                    className={
+                      viewMode === 'history'
+                        ? 'chip-button chip-button--active menu-button'
+                        : 'chip-button menu-button'
+                    }
+                    onClick={() => handleSelectViewMode('history')}
+                  >
+                    {text.history}
+                  </button>
+                  <button
+                    type="button"
+                    className={
+                      viewMode === 'template'
+                        ? 'chip-button chip-button--active menu-button'
+                        : 'chip-button menu-button'
+                    }
+                    onClick={() => handleSelectViewMode('template')}
+                  >
+                    {text.templateEditor}
+                  </button>
+                </div>
+              </div>
+
+              <label className="menu-language-picker">
+                <span>{text.languageLabel}</span>
+                <select
+                  value={appState.locale}
+                  aria-label={text.languageLabel}
+                  onChange={(event) =>
+                    updateState((state) => ({
+                      ...state,
+                      locale: event.target.value as Locale,
+                    }))
+                  }
+                >
+                  {localeOptions.map((locale) => (
+                    <option key={locale} value={locale}>
+                      {localeLabels[locale]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </nav>
+          </aside>
+        </>
+      ) : null}
 
       {viewMode === 'checklist' ? (
       <section className="hero-panel">
@@ -692,7 +762,7 @@ function App() {
         </div>
         <div className="columns-grid columns-grid--split">
           <ChecklistColumn
-            title={text.toCheckTitle(uncheckedItems.length)}
+            title={text.toCheckTitle(uncheckedItems.length, activeInstance.items.length)}
             items={uncheckedItems}
             emptyMessage={text.everythingChecked}
             onItemPress={toggleItem}
@@ -700,7 +770,7 @@ function App() {
             movingDirection={movingItem?.direction === 'to-checked' ? movingItem.direction : null}
           />
           <ChecklistColumn
-            title={text.checkedTitle(checkedItems.length)}
+            title={text.checkedTitle(checkedItems.length, activeInstance.items.length)}
             items={checkedItems}
             emptyMessage={text.nothingCheckedYet}
             showOrder
@@ -815,6 +885,7 @@ function App() {
             <label className="field field--wide">
               <span>{text.addTemplateItem}</span>
               <input
+                ref={addItemInputRef}
                 type="text"
                 value={newItemLabel}
                 onChange={(event) => setNewItemLabel(event.target.value)}
@@ -857,12 +928,7 @@ function App() {
                     className={
                       selected ? 'history-card history-card--active' : 'history-card'
                     }
-                    onClick={() =>
-                      updateState((state) => ({
-                        ...state,
-                        selectedHistoryInstanceId: instance.id,
-                      }))
-                    }
+                    onClick={() => handleSelectHistoryInstance(instance.id)}
                   >
                     <strong>{instance.title}</strong>
                     <span>{text.started(formatStartedAt(instance.startedAt, appState.locale))}</span>
@@ -872,7 +938,7 @@ function App() {
               })}
             </div>
             {selectedHistoryInstance ? (
-              <div className="history-preview">
+              <div className="history-preview" ref={historyPreviewRef}>
                 <div className="history-preview__header">
                   <div>
                     <h3>{selectedHistoryInstance.title}</h3>
@@ -888,12 +954,18 @@ function App() {
                 </div>
                 <div className="columns-grid columns-grid--split">
                   <ChecklistColumn
-                    title={text.toCheckTitle(historyUncheckedItems.length)}
+                    title={text.toCheckTitle(
+                      historyUncheckedItems.length,
+                      selectedHistoryInstance.items.length,
+                    )}
                     items={historyUncheckedItems}
                     emptyMessage={text.everythingWasChecked}
                   />
                   <ChecklistColumn
-                    title={text.checkedTitle(historyCheckedItems.length)}
+                    title={text.checkedTitle(
+                      historyCheckedItems.length,
+                      selectedHistoryInstance.items.length,
+                    )}
                     items={historyCheckedItems}
                     emptyMessage={text.nothingWasChecked}
                     showOrder
