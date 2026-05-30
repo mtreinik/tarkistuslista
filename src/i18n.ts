@@ -22,7 +22,7 @@ export function toIntlLocale(locale: Locale) {
   }
 }
 
-type Messages = {
+export type Messages = {
   appBadge: string
   templateEditor: string
   history: string
