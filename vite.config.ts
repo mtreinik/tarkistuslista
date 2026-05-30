@@ -5,6 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/tarkistuslista/',
   plugins: [
     react(),
     VitePWA({
@@ -17,7 +18,8 @@ export default defineConfig({
         theme_color: '#4f46e5',
         background_color: '#f4f7fb',
         display: 'standalone',
-        start_url: '/',
+        start_url: '/tarkistuslista/',
+        scope: '/tarkistuslista/',
         icons: [
           {
             src: 'pwa-192x192.png',
