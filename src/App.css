@@ -357,6 +357,7 @@
 }
 
 .field input,
+.field select,
 .editor-row input {
   min-height: 2.85rem;
   border-radius: 16px;

@@ -5,10 +5,15 @@ export type ChecklistTemplateItem = {
   label: string
 }
 
+export type ChecklistOrderingMode = 'last-word' | 'full-label'
+
+export const defaultChecklistOrderingMode: ChecklistOrderingMode = 'last-word'
+
 export type ChecklistTemplate = {
   id: string
   title: string
   items: ChecklistTemplateItem[]
+  orderingMode: ChecklistOrderingMode
   createdAt: string
   updatedAt: string
 }
@@ -24,6 +29,7 @@ export type ChecklistInstance = {
   templateId: string
   title: string
   startedAt: string
+  orderingMode: ChecklistOrderingMode
   items: ChecklistInstanceItem[]
 }
 
@@ -58,6 +64,7 @@ export function createChecklistTemplate(
       id: createId(),
       label,
     })),
+    orderingMode: defaultChecklistOrderingMode,
     createdAt: now,
     updatedAt: now,
   }
@@ -71,6 +78,7 @@ export function createChecklistInstance(
     templateId: template.id,
     title: template.title,
     startedAt: createTimestamp(),
+    orderingMode: template.orderingMode,
     items: template.items.map((item) => ({
       id: item.id,
       label: item.label,
@@ -113,11 +121,21 @@ function isTemplateItem(value: unknown): value is ChecklistTemplateItem {
   )
 }
 
-function isTemplate(value: unknown): value is ChecklistTemplate {
+function isChecklistOrderingMode(value: unknown): value is ChecklistOrderingMode {
+  return value === 'last-word' || value === 'full-label'
+}
+
+type PersistedChecklistTemplate = Omit<ChecklistTemplate, 'orderingMode'> & {
+  orderingMode?: ChecklistOrderingMode
+}
+
+function isTemplate(value: unknown): value is PersistedChecklistTemplate {
   return (
     isRecord(value) &&
     typeof value.id === 'string' &&
     typeof value.title === 'string' &&
+    (value.orderingMode === undefined ||
+      isChecklistOrderingMode(value.orderingMode)) &&
     typeof value.createdAt === 'string' &&
     typeof value.updatedAt === 'string' &&
     Array.isArray(value.items) &&
@@ -134,19 +152,27 @@ function isInstanceItem(value: unknown): value is ChecklistInstanceItem {
   )
 }
 
-function isInstance(value: unknown): value is ChecklistInstance {
+type PersistedChecklistInstance = Omit<ChecklistInstance, 'orderingMode'> & {
+  orderingMode?: ChecklistOrderingMode
+}
+
+function isInstance(value: unknown): value is PersistedChecklistInstance {
   return (
     isRecord(value) &&
     typeof value.id === 'string' &&
     typeof value.templateId === 'string' &&
     typeof value.title === 'string' &&
     typeof value.startedAt === 'string' &&
+    (value.orderingMode === undefined ||
+      isChecklistOrderingMode(value.orderingMode)) &&
     Array.isArray(value.items) &&
     value.items.every(isInstanceItem)
   )
 }
 
-type PersistedAppState = Omit<AppState, 'locale'> & {
+type PersistedAppState = Omit<AppState, 'templates' | 'instances' | 'locale'> & {
+  templates: PersistedChecklistTemplate[]
+  instances: PersistedChecklistInstance[]
   locale?: Locale
 }
 
@@ -183,6 +209,18 @@ export function normalizeAppState(state: PersistedAppState): AppState {
 
   return {
     ...state,
+    templates: state.templates.map((template) => ({
+      ...template,
+      orderingMode: isChecklistOrderingMode(template.orderingMode)
+        ? template.orderingMode
+        : defaultChecklistOrderingMode,
+    })),
+    instances: state.instances.map((instance) => ({
+      ...instance,
+      orderingMode: isChecklistOrderingMode(instance.orderingMode)
+        ? instance.orderingMode
+        : defaultChecklistOrderingMode,
+    })),
     selectedTemplateId,
     selectedHistoryInstanceId,
     locale: isLocale(state.locale) ? state.locale : 'en',

@@ -34,7 +34,10 @@ export type Messages = {
   checklistTabsLabel: string
   checklistTitleLabel: string
   checklistItemsLabel: string
+  checklistOrderingLabel: string
   checklistTitlePlaceholder: string
+  checklistOrderingByLastWord: string
+  checklistOrderingByFullLabel: string
   newChecklist: string
   removeChecklist: string
   createChecklist: string
@@ -71,7 +74,10 @@ export const messages: Record<Locale, Messages> = {
     checklistTabsLabel: 'Checklist titles',
     checklistTitleLabel: 'Checklist title',
     checklistItemsLabel: 'Checklist items',
+    checklistOrderingLabel: 'Sort unchecked items by',
     checklistTitlePlaceholder: 'Checklist title',
+    checklistOrderingByLastWord: 'Last word',
+    checklistOrderingByFullLabel: 'Whole item name',
     newChecklist: 'New checklist',
     removeChecklist: 'Remove checklist',
     createChecklist: 'Create checklist',
@@ -108,7 +114,10 @@ export const messages: Record<Locale, Messages> = {
     checklistTabsLabel: 'Tarkistuslistat',
     checklistTitleLabel: 'Tarkistuslistan nimi',
     checklistItemsLabel: 'Tarkistuslistan kohdat',
+    checklistOrderingLabel: 'Järjestä tarkistamattomat kohdat',
     checklistTitlePlaceholder: 'Tarkistuslistan nimi',
+    checklistOrderingByLastWord: 'Viimeisen sanan mukaan',
+    checklistOrderingByFullLabel: 'Koko nimen mukaan',
     newChecklist: 'Uusi tarkistuslista',
     removeChecklist: 'Poista tarkistuslista',
     createChecklist: 'Luo tarkistuslista',
@@ -145,7 +154,10 @@ export const messages: Record<Locale, Messages> = {
     checklistTabsLabel: 'Checklistor',
     checklistTitleLabel: 'Checklistans namn',
     checklistItemsLabel: 'Checklistans punkter',
+    checklistOrderingLabel: 'Sortera okontrollerade punkter efter',
     checklistTitlePlaceholder: 'Checklistans namn',
+    checklistOrderingByLastWord: 'Sista ordet',
+    checklistOrderingByFullLabel: 'Hela namnet',
     newChecklist: 'Ny checklista',
     removeChecklist: 'Ta bort checklista',
     createChecklist: 'Skapa checklista',

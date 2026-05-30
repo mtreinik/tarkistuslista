@@ -1,6 +1,7 @@
-import { useEffect, useRef, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, type FormEvent } from 'react'
+import { sortTemplateItems } from '../checklistSorting'
 import type { Messages } from '../i18n'
-import type { ChecklistTemplate } from '../storage'
+import type { ChecklistOrderingMode, ChecklistTemplate } from '../storage'
 
 type TemplateEditorViewProps = {
   text: Messages
@@ -14,6 +15,7 @@ type TemplateEditorViewProps = {
   onStartCreatingChecklist: () => void
   onCreateChecklist: (title: string) => void
   onSaveTitle: (title: string) => void
+  onSaveOrderingMode: (orderingMode: ChecklistOrderingMode) => void
   onRemoveTemplate: () => void
   onAddItem: (label: string) => void
   onRenameItem: (itemId: string, nextLabel: string) => void
@@ -32,6 +34,7 @@ export function TemplateEditorView({
   onStartCreatingChecklist,
   onCreateChecklist,
   onSaveTitle,
+  onSaveOrderingMode,
   onRemoveTemplate,
   onAddItem,
   onRenameItem,
@@ -44,6 +47,10 @@ export function TemplateEditorView({
   const duplicateNewChecklistTitle = templates.some(
     (template) =>
       template.title.toLowerCase() === newChecklistTitle.trim().toLowerCase(),
+  )
+  const sortedItems = useMemo(
+    () => sortTemplateItems(selectedTemplate.items, selectedTemplate.orderingMode),
+    [selectedTemplate.items, selectedTemplate.orderingMode],
   )
 
   useEffect(() => {
@@ -214,6 +221,19 @@ export function TemplateEditorView({
           {isCreatingChecklist ? text.createChecklist : text.saveTitle}
         </button>
       </form>
+      <label className="field field--wide">
+        <span>{text.checklistOrderingLabel}</span>
+        <select
+          value={selectedTemplate.orderingMode}
+          onChange={(event) =>
+            onSaveOrderingMode(event.target.value as ChecklistOrderingMode)
+          }
+          disabled={isCreatingChecklist}
+        >
+          <option value="last-word">{text.checklistOrderingByLastWord}</option>
+          <option value="full-label">{text.checklistOrderingByFullLabel}</option>
+        </select>
+      </label>
       <p className="section-subtitle">{text.checklistItemsLabel}</p>
       <div className="editor-list">
         {isCreatingChecklist ? (
@@ -221,7 +241,7 @@ export function TemplateEditorView({
         ) : selectedTemplate.items.length === 0 ? (
           <p className="empty-state">{text.noTemplateItems}</p>
         ) : (
-          selectedTemplate.items.map((item) => (
+          sortedItems.map((item) => (
             <div className="editor-row" key={`${item.id}-${item.label}`}>
               <input
                 type="text"

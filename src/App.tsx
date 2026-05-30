@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { messages, toIntlLocale, type Locale } from './i18n'
+import { compareChecklistLabels } from './checklistSorting'
 import { AppMenu } from './components/AppMenu'
 import { HistoryView } from './views/HistoryView'
 import { ChecklistView } from './views/ChecklistView'
@@ -9,6 +10,7 @@ import {
   type AppState,
   type ChecklistInstance,
   type ChecklistInstanceItem,
+  type ChecklistOrderingMode,
   type ChecklistTemplate,
   createChecklistInstance,
   createChecklistTemplate,
@@ -35,16 +37,6 @@ function byCheckedOrder(
   return (left.checkedOrder ?? 0) - (right.checkedOrder ?? 0)
 }
 
-function byLabel(
-  left: ChecklistInstanceItem,
-  right: ChecklistInstanceItem,
-  locale: Locale,
-) {
-  return left.label.localeCompare(right.label, toIntlLocale(locale), {
-    sensitivity: 'base',
-  })
-}
-
 function byStartedAtDescending(
   left: ChecklistInstance,
   right: ChecklistInstance,
@@ -63,10 +55,15 @@ function getCheckedItems(items: ChecklistInstanceItem[]) {
   return items.filter((item) => item.checkedOrder !== null).sort(byCheckedOrder)
 }
 
-function getUncheckedItems(items: ChecklistInstanceItem[], locale: Locale) {
+function getUncheckedItems(
+  items: ChecklistInstanceItem[],
+  orderingMode: ChecklistOrderingMode,
+) {
   return items
     .filter((item) => item.checkedOrder === null)
-    .sort((left, right) => byLabel(left, right, locale))
+    .sort((left, right) =>
+      compareChecklistLabels(left.label, right.label, orderingMode),
+    )
 }
 
 function reorderAfterRemovingCheckedItem(
@@ -227,8 +224,11 @@ function App() {
   }
 
   const uncheckedItems = useMemo(
-    () => (activeInstance ? getUncheckedItems(activeInstance.items, appState.locale) : []),
-    [activeInstance, appState.locale],
+    () =>
+      activeInstance
+        ? getUncheckedItems(activeInstance.items, activeInstance.orderingMode)
+        : [],
+    [activeInstance],
   )
   const checkedItems = useMemo(
     () => (activeInstance ? getCheckedItems(activeInstance.items) : []),
@@ -237,9 +237,12 @@ function App() {
   const historyUncheckedItems = useMemo(
     () =>
       selectedHistoryInstance
-        ? getUncheckedItems(selectedHistoryInstance.items, appState.locale)
+        ? getUncheckedItems(
+            selectedHistoryInstance.items,
+            selectedHistoryInstance.orderingMode,
+          )
         : [],
-    [appState.locale, selectedHistoryInstance],
+    [selectedHistoryInstance],
   )
   const historyCheckedItems = useMemo(
     () =>
@@ -542,6 +545,35 @@ function App() {
     setNewItemLabel('')
   }
 
+  const handleSaveOrderingMode = (orderingMode: ChecklistOrderingMode) => {
+    if (orderingMode === selectedTemplate.orderingMode) {
+      return
+    }
+
+    const nextUpdatedAt = new Date().toISOString()
+
+    updateState((state) => ({
+      ...state,
+      templates: state.templates.map((template) =>
+        template.id === selectedTemplate.id
+          ? {
+              ...template,
+              orderingMode,
+              updatedAt: nextUpdatedAt,
+            }
+          : template,
+      ),
+      instances: updateLatestInstanceForTemplate(
+        state.instances,
+        selectedTemplate.id,
+        (instance) => ({
+          ...instance,
+          orderingMode,
+        }),
+      ),
+    }))
+  }
+
   const handleRenameItem = (itemId: string, nextLabel: string) => {
     const nextUpdatedAt = new Date().toISOString()
 
@@ -677,6 +709,7 @@ function App() {
         }}
         onCreateChecklist={handleCreateChecklist}
         onSaveTitle={handleSaveTitle}
+        onSaveOrderingMode={handleSaveOrderingMode}
         onRemoveTemplate={handleRemoveTemplate}
         onAddItem={handleAddItem}
         onRenameItem={handleRenameItem}
