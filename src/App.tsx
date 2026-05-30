@@ -51,6 +51,15 @@ function formatStartedAt(value: string, locale: Locale) {
   }).format(new Date(value))
 }
 
+function formatCheckedAt(value: string, locale: Locale) {
+  return new Intl.DateTimeFormat(toIntlLocale(locale), {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date(value))
+}
+
 function getCheckedItems(items: ChecklistInstanceItem[]) {
   return items.filter((item) => item.checkedOrder !== null).sort(byCheckedOrder)
 }
@@ -433,6 +442,7 @@ function App() {
                   ? {
                       ...item,
                       checkedOrder: nextOrder,
+                      checkedAt: new Date().toISOString(),
                     }
                   : item,
               ),
@@ -447,6 +457,7 @@ function App() {
                   ? {
                       ...item,
                       checkedOrder: null,
+                      checkedAt: null,
                     }
                   : item,
               ),
@@ -533,12 +544,13 @@ function App() {
           ...instance,
           items: [
             ...instance.items,
-            {
-              ...nextItem,
-              checkedOrder: null,
-            },
-          ],
-        }),
+              {
+                ...nextItem,
+                checkedOrder: null,
+                checkedAt: null,
+              },
+            ],
+          }),
       ),
     }))
 
@@ -677,6 +689,8 @@ function App() {
 
   const formatStartedLabel = (value: string) =>
     text.started(formatStartedAt(value, appState.locale))
+  const formatCheckedTime = (value: string) =>
+    formatCheckedAt(value, appState.locale)
 
   const activeView =
     viewMode === 'checklist' ? (
@@ -689,6 +703,7 @@ function App() {
         hiddenItemIds={hiddenItemIds}
         uncheckedLayoutAnimationDuration={uncheckedLayoutAnimationDuration}
         checkedLayoutAnimationDuration={checkedLayoutAnimationDuration}
+        formatCheckedTime={formatCheckedTime}
         onRegisterItemElement={registerItemElement}
         onToggleItem={toggleItem}
       />
@@ -722,6 +737,7 @@ function App() {
         historyUncheckedItems={historyUncheckedItems}
         historyCheckedItems={historyCheckedItems}
         formatStartedLabel={formatStartedLabel}
+        formatCheckedTime={formatCheckedTime}
         onSelectHistoryInstance={handleSelectHistoryInstance}
       />
     )

@@ -22,6 +22,7 @@ export type ChecklistInstanceItem = {
   id: string
   label: string
   checkedOrder: number | null
+  checkedAt: string | null
 }
 
 export type ChecklistInstance = {
@@ -83,6 +84,7 @@ export function createChecklistInstance(
       id: item.id,
       label: item.label,
       checkedOrder: null,
+      checkedAt: null,
     })),
   }
 }
@@ -148,12 +150,18 @@ function isInstanceItem(value: unknown): value is ChecklistInstanceItem {
     isRecord(value) &&
     typeof value.id === 'string' &&
     typeof value.label === 'string' &&
-    (typeof value.checkedOrder === 'number' || value.checkedOrder === null)
+    (typeof value.checkedOrder === 'number' || value.checkedOrder === null) &&
+    (typeof value.checkedAt === 'string' || value.checkedAt === null)
   )
 }
 
-type PersistedChecklistInstance = Omit<ChecklistInstance, 'orderingMode'> & {
+type PersistedChecklistInstanceItem = Omit<ChecklistInstanceItem, 'checkedAt'> & {
+  checkedAt?: string | null
+}
+
+type PersistedChecklistInstance = Omit<ChecklistInstance, 'orderingMode' | 'items'> & {
   orderingMode?: ChecklistOrderingMode
+  items: PersistedChecklistInstanceItem[]
 }
 
 function isInstance(value: unknown): value is PersistedChecklistInstance {
@@ -220,6 +228,10 @@ export function normalizeAppState(state: PersistedAppState): AppState {
       orderingMode: isChecklistOrderingMode(instance.orderingMode)
         ? instance.orderingMode
         : defaultChecklistOrderingMode,
+      items: instance.items.map((item) => ({
+        ...item,
+        checkedAt: typeof item.checkedAt === 'string' ? item.checkedAt : null,
+      })),
     })),
     selectedTemplateId,
     selectedHistoryInstanceId,

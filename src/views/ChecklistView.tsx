@@ -11,6 +11,7 @@ type ChecklistViewProps = {
   hiddenItemIds: string[]
   uncheckedLayoutAnimationDuration: number
   checkedLayoutAnimationDuration: number
+  formatCheckedTime: (value: string) => string
   onRegisterItemElement: (itemId: string, element: HTMLElement | null) => void
   onToggleItem: (itemId: string) => void
 }
@@ -24,6 +25,7 @@ export function ChecklistView({
   hiddenItemIds,
   uncheckedLayoutAnimationDuration,
   checkedLayoutAnimationDuration,
+  formatCheckedTime,
   onRegisterItemElement,
   onToggleItem,
 }: ChecklistViewProps) {
@@ -54,6 +56,7 @@ export function ChecklistView({
           emptyMessage={text.nothingCheckedYet}
           showOrder
           variant="checked"
+          formatCheckedTime={formatCheckedTime}
           onItemPress={onToggleItem}
           hiddenItemIds={hiddenItemIds}
           onItemElement={onRegisterItemElement}

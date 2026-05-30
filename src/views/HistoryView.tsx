@@ -10,6 +10,7 @@ type HistoryViewProps = {
   historyUncheckedItems: ChecklistInstanceItem[]
   historyCheckedItems: ChecklistInstanceItem[]
   formatStartedLabel: (value: string) => string
+  formatCheckedTime: (value: string) => string
   onSelectHistoryInstance: (instanceId: string) => void
 }
 
@@ -20,6 +21,7 @@ export function HistoryView({
   historyUncheckedItems,
   historyCheckedItems,
   formatStartedLabel,
+  formatCheckedTime,
   onSelectHistoryInstance,
 }: HistoryViewProps) {
   const historyPreviewRef = useRef<HTMLDivElement | null>(null)
@@ -103,6 +105,8 @@ export function HistoryView({
                   items={historyCheckedItems}
                   emptyMessage={text.nothingWasChecked}
                   showOrder
+                  formatCheckedTime={formatCheckedTime}
+                  variant="checked"
                 />
               </div>
             </div>

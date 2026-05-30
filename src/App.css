@@ -358,6 +358,20 @@
   font-weight: 700;
 }
 
+.item-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-left: auto;
+}
+
+.checked-time {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

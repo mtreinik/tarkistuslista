@@ -7,6 +7,7 @@ export type ChecklistColumnProps = {
   emptyMessage: string
   showOrder?: boolean
   variant?: 'default' | 'checked'
+  formatCheckedTime?: (value: string) => string
   onItemPress?: (itemId: string) => void
   hiddenItemIds?: readonly string[]
   onItemElement?: (itemId: string, element: HTMLElement | null) => void
@@ -19,6 +20,7 @@ export function ChecklistColumn({
   emptyMessage,
   showOrder = false,
   variant = 'default',
+  formatCheckedTime,
   onItemPress,
   hiddenItemIds = [],
   onItemElement,
@@ -148,7 +150,14 @@ export function ChecklistColumn({
                 >
                   <span className="item-label">{item.label}</span>
                   {showOrder && item.checkedOrder !== null ? (
-                    <span className="order-badge">{item.checkedOrder}</span>
+                    <span className="item-meta">
+                      {item.checkedAt && formatCheckedTime ? (
+                        <span className="checked-time">
+                          {formatCheckedTime(item.checkedAt)}
+                        </span>
+                      ) : null}
+                      <span className="order-badge">{item.checkedOrder}</span>
+                    </span>
                   ) : null}
                 </button>
               ) : (
@@ -162,7 +171,14 @@ export function ChecklistColumn({
                 >
                   <span className="item-label">{item.label}</span>
                   {showOrder && item.checkedOrder !== null ? (
-                    <span className="order-badge">{item.checkedOrder}</span>
+                    <span className="item-meta">
+                      {item.checkedAt && formatCheckedTime ? (
+                        <span className="checked-time">
+                          {formatCheckedTime(item.checkedAt)}
+                        </span>
+                      ) : null}
+                      <span className="order-badge">{item.checkedOrder}</span>
+                    </span>
                   ) : null}
                 </div>
               )}
