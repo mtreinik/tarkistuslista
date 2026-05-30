@@ -115,12 +115,18 @@
 }
 
 .menu-language-picker select {
-  min-height: 2.75rem;
+  width: 100%;
+  min-height: 2.85rem;
   border-radius: 16px;
   border: 1px solid var(--border);
   background: var(--panel);
   color: var(--text-strong);
-  padding: 0.5rem 0.9rem;
+  padding: 0.75rem 2.5rem 0.75rem 0.95rem;
+  box-sizing: border-box;
+  font: inherit;
+  line-height: 1.2;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 .eyebrow {
@@ -359,6 +365,7 @@
 .field input,
 .field select,
 .editor-row input {
+  width: 100%;
   min-height: 2.85rem;
   border-radius: 16px;
   border: 1px solid var(--border);
@@ -366,6 +373,14 @@
   color: var(--text-strong);
   padding: 0.75rem 0.95rem;
   box-sizing: border-box;
+  font: inherit;
+  line-height: 1.2;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.field select {
+  padding-right: 2.5rem;
 }
 
 .editor-list {
@@ -540,5 +555,21 @@
 
   .template-actions {
     justify-content: flex-end;
+  }
+}
+
+@media (max-width: 520px) {
+  .template-panel .panel-header {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .template-actions {
+    justify-content: stretch;
+  }
+
+  .template-panel .secondary-button,
+  .template-panel .danger-button {
+    width: 100%;
   }
 }
