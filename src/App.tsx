@@ -691,7 +691,6 @@ function App() {
         checkedLayoutAnimationDuration={checkedLayoutAnimationDuration}
         onRegisterItemElement={registerItemElement}
         onToggleItem={toggleItem}
-        onStartFreshChecklist={handleStartFreshChecklist}
       />
     ) : viewMode === 'template' ? (
       <TemplateEditorView
@@ -735,9 +734,11 @@ function App() {
         locale={appState.locale}
         sortedTemplates={sortedTemplates}
         selectedTemplateId={selectedTemplate.id}
+        selectedTemplateTitle={selectedTemplate.title}
         viewMode={viewMode}
         onToggleMenu={() => setIsMenuOpen((open) => !open)}
         onCloseMenu={() => setIsMenuOpen(false)}
+        onStartFreshChecklist={handleStartFreshChecklist}
         onSelectTemplate={handleSelectTemplate}
         onSelectViewMode={handleSelectViewMode}
         onLocaleChange={(locale) =>

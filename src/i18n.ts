@@ -26,6 +26,7 @@ export type Messages = {
   appBadge: string
   templateEditor: string
   history: string
+  menuActionsLabel: string
   historyEmpty: string
   languageLabel: string
   navigationLabel: string
@@ -66,6 +67,7 @@ export const messages: Record<Locale, Messages> = {
     appBadge: 'Checklist',
     templateEditor: 'Template editor',
     history: 'History',
+    menuActionsLabel: 'Actions',
     historyEmpty: 'Start a new checklist to begin building history.',
     languageLabel: 'Language',
     navigationLabel: 'App navigation',
@@ -106,6 +108,7 @@ export const messages: Record<Locale, Messages> = {
     appBadge: 'Tarkistuslista',
     templateEditor: 'Muokkaa pohjaa',
     history: 'Historia',
+    menuActionsLabel: 'Toiminnot',
     historyEmpty: 'Aloita uusi tarkistuslista, niin historiaa alkaa kertyä.',
     languageLabel: 'Kieli',
     navigationLabel: 'Sovelluksen valikko',
@@ -146,6 +149,7 @@ export const messages: Record<Locale, Messages> = {
     appBadge: 'Checklista',
     templateEditor: 'Redigera mall',
     history: 'Historik',
+    menuActionsLabel: 'Funktioner',
     historyEmpty: 'Starta en ny checklista för att börja bygga historik.',
     languageLabel: 'Språk',
     navigationLabel: 'Appnavigering',

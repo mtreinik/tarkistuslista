@@ -15,9 +15,11 @@ type AppMenuProps = {
   locale: Locale
   sortedTemplates: ChecklistTemplate[]
   selectedTemplateId: string
+  selectedTemplateTitle: string
   viewMode: ViewMode
   onToggleMenu: () => void
   onCloseMenu: () => void
+  onStartFreshChecklist: () => void
   onSelectTemplate: (templateId: string) => void
   onSelectViewMode: (mode: ViewMode) => void
   onLocaleChange: (locale: Locale) => void
@@ -29,9 +31,11 @@ export function AppMenu({
   locale,
   sortedTemplates,
   selectedTemplateId,
+  selectedTemplateTitle,
   viewMode,
   onToggleMenu,
   onCloseMenu,
+  onStartFreshChecklist,
   onSelectTemplate,
   onSelectViewMode,
   onLocaleChange,
@@ -80,8 +84,18 @@ export function AppMenu({
           <aside className="menu-drawer" id="app-menu-drawer">
             <nav className="menu-nav" aria-label={text.navigationLabel}>
               <div className="menu-section">
+                <button
+                  type="button"
+                  className="primary-button menu-button"
+                  onClick={() => {
+                    onStartFreshChecklist()
+                    onCloseMenu()
+                  }}
+                >
+                  {text.newChecklistOf(selectedTemplateTitle)}
+                </button>
                 <p className="menu-section__title">{text.checklistTabsLabel}</p>
-                <div className="menu-list">
+                <div className="menu-list menu-radio-group" role="radiogroup">
                   {sortedTemplates.map((template) => (
                     <button
                       key={template.id}
@@ -89,20 +103,24 @@ export function AppMenu({
                       className={
                         template.id === selectedTemplateId &&
                         viewMode === 'checklist'
-                          ? 'chip-button chip-button--active menu-button'
-                          : 'chip-button menu-button'
+                          ? 'menu-radio menu-radio--active'
+                          : 'menu-radio'
+                      }
+                      role="radio"
+                      aria-checked={
+                        template.id === selectedTemplateId && viewMode === 'checklist'
                       }
                       onClick={() => onSelectTemplate(template.id)}
                     >
-                      {template.title}
+                      <span className="menu-radio__indicator" aria-hidden="true" />
+                      <span className="menu-radio__label">{template.title}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="menu-separator" aria-hidden="true" />
-
               <div className="menu-section">
+                <p className="menu-section__title">{text.menuActionsLabel}</p>
                 <div className="menu-list">
                   <button
                     type="button"

@@ -13,7 +13,6 @@ type ChecklistViewProps = {
   checkedLayoutAnimationDuration: number
   onRegisterItemElement: (itemId: string, element: HTMLElement | null) => void
   onToggleItem: (itemId: string) => void
-  onStartFreshChecklist: () => void
 }
 
 export function ChecklistView({
@@ -27,7 +26,6 @@ export function ChecklistView({
   checkedLayoutAnimationDuration,
   onRegisterItemElement,
   onToggleItem,
-  onStartFreshChecklist,
 }: ChecklistViewProps) {
   return (
     <section className="hero-panel">
@@ -37,13 +35,6 @@ export function ChecklistView({
           <h1>{activeInstance.title}</h1>
           <p className="muted-text">{startedAtLabel}</p>
         </div>
-        <button
-          type="button"
-          className="primary-button"
-          onClick={onStartFreshChecklist}
-        >
-          {text.newChecklistOf(activeInstance.title)}
-        </button>
       </div>
       <div className="columns-grid columns-grid--split">
         <ChecklistColumn
